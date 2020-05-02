@@ -6,9 +6,6 @@ const connectDB = require('./config/db');
 // Load env vars
 dotenv.config({ path: './config/config.env' });
 
-// Connect to database
-connectDB();
-
 // Route files
 const bootcamps = require('./routes/bootcamps');
 
@@ -24,14 +21,27 @@ app.use('/api/v1/bootcamps', bootcamps);
 
 const PORT = process.env.PORT || 5000;
 
-const server = app.listen(
-  PORT,
-  console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
-);
+const connectToDatabaseAndStartServer = async () => {
+  const database = process.env.MONGO_URI;
 
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err, promise) => {
-  console.log(`Error: ${err.message}`);
-  // Close server & exit process
-  server.close(() => process.exit(1));
-});
+  try {
+    // Connect to database
+    console.log('Connecting to database, please wait...');
+    const dbConnection = await connectDB(database);
+
+    // Start server
+    if (dbConnection.connection) {
+      const server = app.listen(
+        PORT,
+        console.log(
+          `Server running in ${process.env.NODE_ENV} mode on port ${PORT}`
+        )
+      );
+    }
+  } catch (err) {
+    console.error(err.message);
+    console.log('Connection to database failed, server will not start');
+  }
+};
+
+connectToDatabaseAndStartServer();
