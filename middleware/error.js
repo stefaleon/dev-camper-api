@@ -16,6 +16,19 @@ const errorHandler = (err, req, res, next) => {
     error = new ErrorResponse(message, 404);
   }
 
+  // mongoose duplicate key
+  if (err.code === 11000) {
+    const message = `Duplicate value: ${Object.keys(err.keyValue)[0]}`;
+    error = new ErrorResponse(message, 400); // bad request
+  }
+
+  // mongoose validation errors
+  if (err.name === 'ValidationError') {
+    // get all validation errors messages from the err object and put them to a message string
+    const message = Object.values(err.errors).map((val) => val.message);
+    error = new ErrorResponse(message, 400); // bad request
+  }
+
   res.status(error.statusCode || 500).json({
     success: false,
     error: error.message || 'Server Error',
